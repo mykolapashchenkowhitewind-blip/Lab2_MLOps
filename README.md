@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/<your-github-username>/<your-repository>/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-github-username>/<your-repository>/actions/workflows/ci.yml)
 
+## Опис системи
+
 FastAPI service for Iris flower classification with MLOps monitoring features: Prometheus metrics, `/metrics`, drift detection through the Kolmogorov-Smirnov test, structured JSON logs, Docker, Docker Compose monitoring, and pytest coverage.
 
 ## Technology Stack
@@ -129,7 +131,7 @@ Example request:
 }
 ```
 
-## Implemented Metrics
+## Реалізовані метрики
 
 - `ml_predictions_total{class_name,status}`: number of predictions by class and status.
 - `ml_prediction_latency_seconds`: histogram of `/predict` latency.
@@ -139,7 +141,42 @@ Example request:
 - `ml_drift_checks_total`: number of drift checks.
 - `ml_drift_detected_total{feature}`: drift detections by feature.
 
-## Prometheus Monitoring
+## Drift Detection
+
+The service compares live input batches with the training reference sample saved in `reference_stats.joblib`. The endpoint `POST /check-drift` runs a two-sample Kolmogorov-Smirnov test for each Iris feature:
+
+- `sepal_length`
+- `sepal_width`
+- `petal_length`
+- `petal_width`
+
+A feature is marked as drifted when `p_value < alpha`. The whole batch is marked as drifted when at least one feature has statistically significant drift.
+
+## Приклади запитів
+
+Prediction example:
+
+```powershell
+curl -X POST http://localhost:8000/predict `
+  -H "Content-Type: application/json" `
+  -d "{\"sepal_length\":5.1,\"sepal_width\":3.5,\"petal_length\":1.4,\"petal_width\":0.2}"
+```
+
+Metrics example:
+
+```powershell
+curl http://localhost:8000/metrics
+```
+
+Drift check example:
+
+```powershell
+curl -X POST http://localhost:8000/check-drift `
+  -H "Content-Type: application/json" `
+  -d "{\"samples\":[[9.0,8.0,8.0,5.0],[9.5,7.5,8.5,5.5],[8.5,8.5,7.5,4.5],[9.2,8.2,8.2,5.2],[9.8,7.8,8.8,5.8],[8.8,8.8,7.8,4.8],[9.4,8.4,8.4,5.4],[9.6,7.6,8.6,5.6],[8.6,8.6,7.6,4.6],[9.1,8.1,8.1,5.1]],\"alpha\":0.05}"
+```
+
+## Як запустити моніторинг
 
 Run the full monitoring stack:
 
@@ -175,7 +212,7 @@ screenshots/prometheus-predictions.png
 screenshots/prometheus-latency.png
 ```
 
-## Structured Logging
+## Логування
 
 The service writes JSON logs to stdout for important events:
 
@@ -254,6 +291,6 @@ https://your-render-service.onrender.com
 
 Replace the placeholder after creating the Render Web Service from this repository.
 
-## Conclusions
+## Висновки
 
 Lab 3 turns the basic ML API from Lab 2 into an observable service. Prometheus metrics show operational behavior and model-specific behavior, JSON logs preserve event context, and the KS-test based drift endpoint detects when live input distributions differ from the training reference data.
