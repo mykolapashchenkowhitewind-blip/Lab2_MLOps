@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.github/
+.idea/
+.venv/
+.venv*/
+tests/
+*.md
+.env
+MLOps lab2 в1.pdf
